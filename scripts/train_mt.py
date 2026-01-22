@@ -65,16 +65,31 @@ def main():
     vec_env = DummyVecEnv([lambda: env])
 
     # Separate eval env (same task set), deterministic eval
-    eval_sampler = UniformTaskSampler(n_tasks=n_tasks, seed=args.seed + 999)
-    eval_env, _ = make_multitask_env(
-        mt_name=args.mt,
-        seed=args.seed + 999,
-        max_episode_steps=args.max_episode_steps,
-        task_sampler=eval_sampler,
-        render_mode=None,
-        task_id_in_obs=True,   # ✅ eval with same observation structure
+    from
+    stable_baseline3.common.monitor
+    import Monitor
+    from
+    stable_baseline3.common.vec_env
+    import DummyVecEnv, VecMonitor
+
+    #build training env
+    env, = make_multitask_env(
+        my_name = args.mt,
+        seed = args.seed,
+
+    max_episode_steps = args.max_episode_steps,
+        task_sampler = sampler,
+        render_mode = None,
     )
-    eval_vec_env = DummyVecEnv([lambda: eval_env])
+
+    #important: add Monitor BEFORE wrapping in VecENV
+    env = Monitor(env)
+
+    #SB3 requires VecEnv
+    vec_env = DummyVecEnv[(lambda:env])
+
+    #IMPORTANT: add VecMonito to log rollout stats
+    vec_env = VecMonitor(vec_env)
 
     # SAC config (solid default for Meta-World)
     model = SAC(
