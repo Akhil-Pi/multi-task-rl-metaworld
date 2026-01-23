@@ -1,0 +1,8 @@
+models/
+logs/
+videos/
+videos_eval/
+__pycache__/
+*.pyc
+*.zip
+*.mp4
