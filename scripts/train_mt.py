@@ -104,7 +104,7 @@ def main():
     env = Monitor(env)
 
     #SB3 requires VecEnv
-    vec_env = DummyVecEnv[(lambda:env)]
+    vec_env = DummyVecEnv([lambda:env])
 
     #IMPORTANT: add VecMonito to log rollout stats
     vec_env = VecMonitor(vec_env)
