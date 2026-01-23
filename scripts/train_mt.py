@@ -4,6 +4,8 @@ import os
 
 import numpy as np
 import torch
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -62,25 +64,41 @@ def main():
     )
 
     # SB3 likes VecEnv (even DummyVecEnv)
+    env = Monitor(env)
     vec_env = DummyVecEnv([lambda: env])
+    vec_env = VecMonitor(vec_env)
+
+    eval_env, _ = make_multitask_env(
+    mt_name=args.mt,
+    seed=args.seed + 1000,
+    max_episode_steps=args.max_episode_steps,
+    task_sampler=UniformTaskSampler(n_tasks=n_tasks, seed=args.seed + 1000),
+    render_mode=None,
+    task_id_in_obs=True,
+    )
+
+    eval_env = Monitor(eval_env)
+    eval_vec_env = DummyVecEnv([lambda: eval_env])
+    eval_vec_env = VecMonitor(eval_vec_env)
+
 
     # Separate eval env (same task set), deterministic eval
-    from 
-    stable_baseline3.common.monitor
-    import Monitor
-    from
-    stable_baseline3.common.vec_env
-    import DummyVecEnv, VecMonitor
+    #from 
+    #stable_baselines3.common.monitor
+    #import Monitor
+    #from
+    #stable_baselines3.common.vec_env
+    #import DummyVecEnv, VecMonitor
 
     #build training env
-    env, = make_multitask_env(
-        my_name = args.mt,
-        seed = args.seed,
+    #env, = make_multitask_env(
+     #   my_name = args.mt,
+      #  seed = args.seed,
 
-    max_episode_steps = args.max_episode_steps,
-        task_sampler = sampler,
-        render_mode = None,
-    )
+   # max_episode_steps = args.max_episode_steps,
+    #    task_sampler = sampler,
+     #   render_mode = None,
+    #)
 
     #important: add Monitor BEFORE wrapping in VecENV
     env = Monitor(env)
