@@ -65,8 +65,7 @@ def main():
     vec_env = DummyVecEnv([lambda: env])
 
     # Separate eval env (same task set), deterministic eval
-    from
-    stable_baseline3.common.monitor
+    from stable_baseline3.common.monitor
     import Monitor
     from
     stable_baseline3.common.vec_env
