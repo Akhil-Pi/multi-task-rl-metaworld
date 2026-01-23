@@ -12,7 +12,7 @@ def main():
     video_dir = "results/videos_mt3"
     os.makedirs(video_dir, exist_ok=True)
 
-    # Build env (IMPORTANT: render_mode must be rgb_array)
+    # Build env
     n_tasks = 3 if mt == "MT3" else 10
     sampler = UniformTaskSampler(n_tasks=n_tasks, seed=0)
     env, task_names = make_multitask_env(
@@ -20,9 +20,16 @@ def main():
         seed=0,
         max_episode_steps=200,
         task_sampler=sampler,
-        render_mode="rgb_array",
+        render_mode="rgb_array",  # This should work but might not be passed through
         task_id_in_obs=True,
     )
+
+    # WORKAROUND: Force render_mode on the base environment
+    if hasattr(env, 'unwrapped'):
+        env.unwrapped.render_mode = "rgb_array"
+    
+    # Also try setting it on the env directly
+    env.render_mode = "rgb_array"
 
     # Record every episode
     env = RecordVideo(
