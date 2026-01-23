@@ -41,6 +41,9 @@ class MultiTaskSwitchEnvWrapper(gym.Env):
         # Meta-World MT benchmarks share spaces (same obs/action shapes)
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
+        
+        # ✅ FIX: Set render_mode from the wrapped environments
+        self.render_mode = self.env.render_mode if hasattr(self.env, 'render_mode') else None
 
         self._steps = 0
         self.total_steps = 0
