@@ -44,6 +44,7 @@ def main():
         max_episode_steps=args.max_episode_steps,
         task_sampler=sampler,
         render_mode=None,
+        add_task_id=False,
     )
 
     vec_env = DummyVecEnv([lambda: env])
