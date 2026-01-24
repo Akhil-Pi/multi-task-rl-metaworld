@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
+from stable_baselines3.common.monitor import Monitor
 
 from src.mt_rl.env_factory import make_multitask_env, build_mt_tasks
 from src.mt_rl.task_sampler import UniformTaskSampler, CurriculumTaskSampler
@@ -18,12 +19,13 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--mt", type=str, default="MT3", choices=["MT3", "MT10"])
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--steps", type=int, default=1_000_000)
+    p.add_argument("--total-timesteps", type=int, default=1_000_000)
     p.add_argument("--max-episode-steps", type=int, default=500)
     p.add_argument("--use-curriculum", action="store_true")
-    p.add_argument("--stage-steps", type=str, default="0,500000,1000000")  # MT3 default
+    p.add_argument("--stage-steps", type=str, default="0,500000,1000000")
     p.add_argument("--logdir", type=str, default="./logs")
     p.add_argument("--savedir", type=str, default="./models")
+    p.add_argument("--save-freq", type=int, default=100_000)
     p.add_argument("--eval-freq", type=int, default=100_000)
     p.add_argument("--eval-episodes-per-task", type=int, default=3)
     return p.parse_args()
@@ -51,47 +53,40 @@ def main():
         sampler = UniformTaskSampler(n_tasks=n_tasks, seed=args.seed)
         sampler_cb = None
 
-    # Build training env (single env switching tasks each episode)
+    # Build training env
     env, _ = make_multitask_env(
         mt_name=args.mt,
         seed=args.seed,
         max_episode_steps=args.max_episode_steps,
         task_sampler=sampler,
         render_mode=None,
-        task_id_in_obs=True,   # ✅ explicitly enable task-conditioning
+        task_id_in_obs=True,
     )
 
-    # SB3 likes VecEnv (even DummyVecEnv)
-    vec_env = DummyVecEnv([lambda: env])
-
-    # Separate eval env (same task set), deterministic eval
-    from
-    stable_baseline3.common.monitor
-    import Monitor
-    from
-    stable_baseline3.common.vec_env
-    import DummyVecEnv, VecMonitor
-
-    #build training env
-    env, = make_multitask_env(
-        my_name = args.mt,
-        seed = args.seed,
-
-    max_episode_steps = args.max_episode_steps,
-        task_sampler = sampler,
-        render_mode = None,
-    )
-
-    #important: add Monitor BEFORE wrapping in VecENV
+    # Add Monitor BEFORE wrapping in VecEnv
     env = Monitor(env)
 
-    #SB3 requires VecEnv
-    vec_env = DummyVecEnv[(lambda:env])
+    # SB3 requires VecEnv
+    vec_env = DummyVecEnv([lambda: env])
 
-    #IMPORTANT: add VecMonito to log rollout stats
+    # Add VecMonitor to log rollout stats
     vec_env = VecMonitor(vec_env)
 
-    # SAC config (solid default for Meta-World)
+    # Build separate eval env
+    eval_sampler = UniformTaskSampler(n_tasks=n_tasks, seed=args.seed + 999)
+    eval_env, _ = make_multitask_env(
+        mt_name=args.mt,
+        seed=args.seed + 999,
+        max_episode_steps=args.max_episode_steps,
+        task_sampler=eval_sampler,
+        render_mode=None,
+        task_id_in_obs=True,
+    )
+    eval_env = Monitor(eval_env)
+    eval_vec_env = DummyVecEnv([lambda: eval_env])
+    eval_vec_env = VecMonitor(eval_vec_env)
+
+    # SAC config
     model = SAC(
         policy="MlpPolicy",
         env=vec_env,
@@ -119,13 +114,12 @@ def main():
 
     # Callbacks
     checkpoint_cb = CheckpointCallback(
-        save_freq=100_000,
+        save_freq=args.save_freq,
         save_path=os.path.join(args.savedir, "checkpoints"),
         name_prefix=f"sac_{args.mt.lower()}",
         verbose=1,
     )
 
-    # SB3 EvalCallback evaluates using the eval_env; will save best by mean reward
     eval_cb = EvalCallback(
         eval_vec_env,
         best_model_save_path=os.path.join(args.savedir, f"best_{args.mt.lower()}"),
@@ -136,7 +130,6 @@ def main():
         verbose=1,
     )
 
-    # Optional multi-task eval stats (logs success_rate if info['success'] exists)
     mt_eval_cb = MultiTaskEvalCallback(
         eval_env=eval_env,
         n_tasks=n_tasks,
@@ -152,11 +145,11 @@ def main():
 
     print("=" * 70)
     print(f"Training SAC on {args.mt} with {n_tasks} tasks")
-    print(f"Task conditioning: one-hot task id appended to observation")
+    print(f"Task conditioning: task id in observation")
     print(f"Task sampling: {'curriculum' if args.use_curriculum else 'uniform'}")
     print("=" * 70)
 
-    model.learn(total_timesteps=args.steps, callback=callbacks, progress_bar=True)
+    model.learn(total_timesteps=args.total_timesteps, callback=callbacks, progress_bar=True)
 
     # Save final
     final_path = os.path.join(args.savedir, f"sac_{args.mt.lower()}_final")
