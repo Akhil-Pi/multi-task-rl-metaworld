@@ -1,22 +1,10 @@
-# Training outputs (DO NOT UPLOAD)
 models/
 logs/
 videos/
 videos_eval/
 videos_eval_temp/
-checkpoints/
-
-# Python cache
 __pycache__/
-*.pyc
-*.pyo
 src/mt_rl/__pycache__/
-
-# Large files
+*.pyc
 *.zip
 *.mp4
-*.avi
-
-# Temp files
-*.tmp
-.DS_Store
