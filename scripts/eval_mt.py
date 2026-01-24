@@ -44,6 +44,7 @@ def main():
         max_episode_steps=args.max_episode_steps,
         task_sampler=sampler,
         render_mode=None,
+        task_id_in_obs=False,
     )
 
     vec_env = DummyVecEnv([lambda: env])
@@ -62,7 +63,7 @@ def main():
         for _ in range(args.episodes_per_task):
             # Force the sampler to pick tid for this episode
             class _OneShotSampler:
-                def sample_task_id(self_non):
+                def sample_task_id(self_non, step=None):
                     return tid
 
             env.task_sampler = _OneShotSampler()
