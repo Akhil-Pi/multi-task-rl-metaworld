@@ -42,12 +42,15 @@ def main():
         video_folder = f"{video_base_dir}/mt3_{task_id:02d}_{task_name}"
         os.makedirs(video_folder, exist_ok=True)
         
+        env.render_mode = "rgb_array"
+
         # Wrap with video recorder
         env = RecordVideo(
             env,
             video_folder=video_folder,
             episode_trigger=lambda ep_id: True,  # Record all episodes
             name_prefix=f"mt3_{task_name}",
+            disable_logger=True,
         )
         
         # Record 3 episodes per task to show variability
