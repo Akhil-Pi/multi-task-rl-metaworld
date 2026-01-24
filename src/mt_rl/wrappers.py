@@ -24,6 +24,7 @@ class MultiTaskSwitchEnvWrapper(gym.Env):
         task_sampler,
         max_episode_steps: int,
         seed: int = 0,
+        render_mode=None,  # ← ADDED: accept render_mode parameter
     ):
         super().__init__()
         self.env_dict = env_dict
@@ -42,8 +43,13 @@ class MultiTaskSwitchEnvWrapper(gym.Env):
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
         
-        # ✅ FIX: Set render_mode from the wrapped environments
-        self.render_mode = self.env.render_mode if hasattr(self.env, 'render_mode') else None
+        # ✅ FIX: Use provided render_mode or fallback to env's render_mode
+        if render_mode is not None:
+            self.render_mode = render_mode
+        elif hasattr(self.env, 'render_mode'):
+            self.render_mode = self.env.render_mode
+        else:
+            self.render_mode = None
 
         self._steps = 0
         self.total_steps = 0

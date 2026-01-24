@@ -62,24 +62,32 @@ def _make_single_env_from_benchmark(bench, env_name: str, seed: int, render_mode
     Create a Meta-World env instance from benchmark train_classes.
     """
     env_cls = bench.train_classes[env_name]
-    env = env_cls()
+    try:
+        env = env_cls(render_mode=render_mode)
+    except TypeError:
+        env = env_cls()
+    
     # set seed if supported
     if hasattr(env, "seed"):
         env.seed(seed)
     if hasattr(env, "action_space") and hasattr(env.action_space, "seed"):
         env.action_space.seed(seed)
 
-    # Some Meta-World envs use render_mode via gymnasium; classic ones don't.
-    # We keep it compatible by ignoring render_mode if not supported.
     return env
 
+
 def _make_env_from_cls(env_cls, seed: int, render_mode=None):
-    env = env_cls()
+    try:
+        env = env_cls(render_mode=render_mode)
+    except TypeError:
+        env = env_cls()
+    
     if hasattr(env, "seed"):
         env.seed(seed)
     if hasattr(env, "action_space") and hasattr(env.action_space, "seed"):
         env.action_space.seed(seed)
     return env
+
 
 def make_multitask_env(
     mt_name: str,
@@ -96,7 +104,13 @@ def make_multitask_env(
     env_dict = {}
     for i, env_name in enumerate(task_names):
         env_cls = bench.train_classes[env_name]
-        env = env_cls()
+        
+        # Create env with render_mode if supported
+        try:
+            env = env_cls(render_mode=render_mode)
+        except TypeError:
+            # Fallback if render_mode not supported
+            env = env_cls()
 
         # seed (best-effort)
         if hasattr(env, "seed"):
@@ -115,10 +129,10 @@ def make_multitask_env(
         task_sampler=task_sampler,
         max_episode_steps=max_episode_steps,
         seed=seed,
+        render_mode=render_mode,  # ← ADDED: pass render_mode to wrapper
     )
 
     if task_id_in_obs:
         env = TaskIDObsWrapper(env, n_tasks=len(tasks))
 
     return env, task_names
-

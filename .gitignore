@@ -1,0 +1,10 @@
+models/
+logs/
+videos/
+videos_eval/
+videos_eval_temp/
+__pycache__/
+src/mt_rl/__pycache__/
+*.pyc
+*.zip
+*.mp4
