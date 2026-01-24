@@ -40,8 +40,14 @@ def main():
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model not found: {model_path}")
 
+    print(f"Loading model from: {model_path}")
+
     # Build eval env WITH video recording capability if requested
-    render_mode = "rgb_array" if args.record_video else None
+    if args.record_video:
+        render_mode = "rgb_array"
+        print("Video recording enabled with render_mode='rgb_array'")
+    else:
+        render_mode = None
     
     sampler = UniformTaskSampler(n_tasks=n_tasks, seed=args.seed + 999)
     env, _ = make_multitask_env(
@@ -52,6 +58,12 @@ def main():
         render_mode=render_mode,
         task_id_in_obs=True,
     )
+
+    # Debug: Check if render_mode is actually set
+    if args.record_video:
+        print(f"Environment render_mode: {env.render_mode}")
+        if env.render_mode is None:
+            raise ValueError("Environment render_mode is None even though we set it!")
 
     # Wrap with video recorder if requested (single folder first)
     temp_video_dir = args.video_dir + "_temp" if args.record_video else None
