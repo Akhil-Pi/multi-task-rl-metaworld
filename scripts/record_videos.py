@@ -42,7 +42,7 @@ def main():
         video_folder = f"{video_base_dir}/mt3_{task_id:02d}_{task_name}"
         os.makedirs(video_folder, exist_ok=True)
         
-        env.render_mode = "rgb_array"
+        env.unwrapped.render_mode = "rgb_array"
 
         # Wrap with video recorder
         env = RecordVideo(
