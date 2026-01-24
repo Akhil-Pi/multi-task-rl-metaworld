@@ -98,7 +98,7 @@ class MultiTaskSwitchEnvWrapper(gym.Env):
 
     def render(self):
         if hasattr(self.env, "render"):
-            return self.env.render()
+            return self.env.render(mode="rgb_array")
         return None
 
     def close(self):
